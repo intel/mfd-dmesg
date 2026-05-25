@@ -220,20 +220,30 @@ class Dmesg(ToolTemplate):
         else:
             return True
 
-    def verify_messages(self) -> dict:
+    def verify_messages(self, custom_allowlist: Iterable[str] | None = None) -> dict:
         """Verify if there are err level messages in dmesg output.
 
+        :param custom_allowlist: list of error messages to ignore in the dmesg output, if any.
+                                 By default, it uses DMESG_WHITELIST which contains known benign errors.
+                                 If this parameter is provided, it will be combined with DMESG_WHITELIST
+                                 to create the final allowlist.
         :return: dictionary indicating success or failure and the error messages if present.
         """
+        if custom_allowlist is None:
+            allowlist = DMESG_WHITELIST
+        else:
+            allowlist = list(DMESG_WHITELIST) + list(custom_allowlist)
         logger.log(level=log_levels.MODULE_DEBUG, msg="Verify Dmesg Errors.")
         level = DmesgLevelOptions.ERRORS if self._is_linux() else DmesgLevelOptions.NONE
         out = self.get_messages(level=level)
         dmesg_result = {"successful": True, "error": ""}
         if out:
             for error in out.splitlines():
+                if not error.strip():
+                    continue
                 is_error = True
                 if self._check_specific_errors(error):
-                    for benign_message in DMESG_WHITELIST:
+                    for benign_message in allowlist:
                         if benign_message in error:
                             is_error = False
                             logger.log(

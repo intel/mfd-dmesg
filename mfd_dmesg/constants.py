@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from typing import Optional
-from .enums import DmesgLevelOptions # noqa: F401
+from .enums import DmesgLevelOptions  # noqa: F401
 
 
 @dataclass
