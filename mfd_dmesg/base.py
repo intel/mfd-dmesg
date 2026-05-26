@@ -178,12 +178,13 @@ class Dmesg(ToolTemplate):
 
     def get_messages_additional(
         self,
-        service_name: str = None,
+        service_name: str | None = None,
         lines: int = 1000,
-        expected_return_codes: Iterable = frozenset({0}),
-        additional_greps: Optional[List[str]] = None,
+        expected_return_codes: Iterable[int] = frozenset({0}),
+        additional_greps: list[str] | None = None,
     ) -> str:
-        """Read the last lines of message buffer of the kernel (dmesg).
+        """
+        Read the last lines of message buffer of the kernel (dmesg).
 
         :param service_name: limits dmesg messages only to provided service
         :param lines: limit number of lines
@@ -195,7 +196,7 @@ class Dmesg(ToolTemplate):
         if not additional_greps:
             additional_greps = []
 
-        command = self._tool_exec
+        command = f"{self._tool_exec} | tail -n {lines}"
         if service_name is not None:
             command += f" | grep '{service_name}'"
 
@@ -204,7 +205,6 @@ class Dmesg(ToolTemplate):
             for additional_grep in additional_greps:
                 grep_content = grep_content + f"\\|{additional_grep}" if grep_content else f"{additional_grep}"
             command += f" | grep -i '{grep_content}'"
-        command += f" | tail -n {lines}"
         out = self._connection.execute_command(command, shell=True, expected_return_codes=expected_return_codes).stdout
         return out.strip()
 

@@ -223,6 +223,30 @@ class TestDmesg:
             'dmesg | grep -v "Step" | grep -iE "error|fail" | grep \'ix1\'', shell=True, expected_return_codes={0, 1}
         )
 
+    def test_get_messages_imc_acc_command_level_warning(self, dmesg):
+        dmesg._connection.execute_command.side_effect = [
+            ConnectionCalledProcessError(returncode=0, cmd=""),
+            ConnectionCompletedProcess(return_code=0, args="command", stdout="", stderr="stderr"),
+        ]
+        dmesg.get_messages(level=DmesgLevelOptions.WARNINGS)
+        dmesg._connection.execute_command.assert_called_with(
+            'dmesg | grep -v "Step" | grep -iE "warning" ',
+            shell=True,
+            expected_return_codes={0, 1},
+        )
+
+    def test_get_messages_imc_acc_command_level_critical(self, dmesg):
+        dmesg._connection.execute_command.side_effect = [
+            ConnectionCalledProcessError(returncode=0, cmd=""),
+            ConnectionCompletedProcess(return_code=0, args="command", stdout="", stderr="stderr"),
+        ]
+        dmesg.get_messages(level=DmesgLevelOptions.CRITICAL)
+        dmesg._connection.execute_command.assert_called_with(
+            'dmesg | grep -v "Step" | grep crit ',
+            shell=True,
+            expected_return_codes={0, 1},
+        )
+
     def test_get_messages_without_level(self, dmesg):
         output = dedent(
             """
@@ -266,6 +290,28 @@ class TestDmesg:
             return_code=0, args="command", stdout=output, stderr="stderr"
         )
         assert expected == dmesg.get_messages_additional()
+
+    def test_get_messages_additional_command_check(self, dmesg):
+        """
+        Test to verify that correct command is executed.
+
+        when getting additional messages with service name and without level filtering.
+        """
+        output = dedent(
+            """
+            [15197896.276724] IPv6: ens785: IPv6 duplicate address 24:1:1::1
+            used by aa:bb:cc:dd:ee:ff detected!
+            [15222488.275756] ice 0000:4e:00.0 ens786: NIC Link is Down
+            [15222488.308184] ice 0000:4b:00.0 ens785: NIC Link is Down
+            [15222506.769174] ice 0000:4e:00.0 ens786: A parallel fault was detected."""
+        )
+        dmesg._connection.execute_command.return_value = ConnectionCompletedProcess(
+            return_code=0, args="command", stdout=output, stderr="stderr"
+        )
+        dmesg.get_messages_additional(lines=5, service_name="ice")
+        dmesg._connection.execute_command.assert_called_with(
+            f"{dmesg._tool_exec} | tail -n 5 | grep 'ice'", shell=True, expected_return_codes={0}
+        )
 
     def test_verify_messages(self, dmesg):
         output = dedent(
