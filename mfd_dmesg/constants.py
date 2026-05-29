@@ -1,10 +1,10 @@
-# Copyright (C) 2025 Intel Corporation
+# Copyright (C) 2025-2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 """Enums for Dmesg module."""
 
 from dataclasses import dataclass
 from typing import Optional
-from .enums import DmesgLevelOptions # noqa: F401
+from .enums import DmesgLevelOptions  # noqa: F401
 
 
 @dataclass
