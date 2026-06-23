@@ -220,9 +220,10 @@ class Dmesg(ToolTemplate):
         else:
             return True
 
-    def verify_messages(self) -> dict:
+    def verify_messages(self, dmesg_whitelist: list[str] = DMESG_WHITELIST) -> dict:
         """Verify if there are err level messages in dmesg output.
 
+        :param dmesg_whitelist: list of benign messages to ignore
         :return: dictionary indicating success or failure and the error messages if present.
         """
         logger.log(level=log_levels.MODULE_DEBUG, msg="Verify Dmesg Errors.")
@@ -233,7 +234,7 @@ class Dmesg(ToolTemplate):
             for error in out.splitlines():
                 is_error = True
                 if self._check_specific_errors(error):
-                    for benign_message in DMESG_WHITELIST:
+                    for benign_message in dmesg_whitelist:
                         if benign_message in error:
                             is_error = False
                             logger.log(
