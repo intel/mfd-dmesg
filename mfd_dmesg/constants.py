@@ -77,6 +77,7 @@ DMESG_WHITELIST = [
     r"Deprecated Driver is detected: bnx2i",
     r"the capability attribute has been deprecated",  # related to disk
     r"VF could not set VLAN 0",
+    r"SMBus is busy, can't use it",  # related to disk
 ]
 FAILS = ["no defer", "error", "fail", "timeout", "warning", "overruns", "excessive missed"]
 INVALID_MODULE_ERRORS = ["Invalid", "default value", "outside of range", "Single Root Input/Output Virtualization"]
