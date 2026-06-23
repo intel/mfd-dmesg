@@ -386,6 +386,63 @@ class TestDmesg:
         )
         assert dmesg.verify_messages()["successful"]
 
+    def test_verify_messages_ignores_empty_lines(self, dmesg):
+        output = (
+            "[    4.923735] SELinux: Runtime disable is not supported\n"
+            "\n"
+            "[  321.327775] CIFS: VFS: unaligned rsize, making it a multiple of 4096 bytes"
+        )
+        custom_allowlist = ["SELinux", "unaligned rsize"]
+        dmesg._connection.execute_command.return_value = ConnectionCompletedProcess(
+            return_code=0, args="command", stdout=output, stderr="stderr"
+        )
+        result = dmesg.verify_messages(custom_allowlist=custom_allowlist)
+        assert result["successful"]
+        assert result["error"] == ""
+
+    @pytest.mark.parametrize(
+        "custom_allowlist,expected_successful,expected_error_contains",
+        [
+            pytest.param(
+                ["Couldn't get size", "MODSIGN", "unexpected notification"],
+                True,
+                [],
+                id="all_errors_allowlisted",
+            ),
+            pytest.param(
+                ["Couldn't get size"],
+                False,
+                ["MODSIGN", "unexpected notification"],
+                id="partial_match",
+            ),
+            pytest.param(
+                [],
+                False,
+                ["Couldn't get size"],
+                id="empty_allowlist",
+            ),
+        ],
+    )
+    def test_verify_messages_with_custom_allowlist(
+        self, dmesg, custom_allowlist, expected_successful, expected_error_contains
+    ):
+        output = dedent(
+            """
+            [    4.660616] Couldn't get size: 0x800000000000000e
+            [    4.694322] MODSIGN: Couldn't get UEFI db list
+            [   33.580364] cdc_ether 1-1.1.2:1.0 enp0s29u1u1u2: CDC: unexpected notification 20!"""
+        )
+        dmesg._connection.execute_command.return_value = ConnectionCompletedProcess(
+            return_code=0, args="command", stdout=output, stderr="stderr"
+        )
+        result = dmesg.verify_messages(custom_allowlist=custom_allowlist)
+        assert result["successful"] == expected_successful
+        if expected_successful:
+            assert result["error"] == ""
+        else:
+            for fragment in expected_error_contains:
+                assert fragment in result["error"]
+
     def test_check_errors(self, dmesg):
         output = dedent(
             """
@@ -840,6 +897,43 @@ class TestDmesgFreeBSD:
             return_code=0, args="command", stdout="", stderr="stderr"
         )
         assert dmesg.verify_messages()["successful"]
+
+    @pytest.mark.parametrize(
+        "custom_allowlist,expected_successful,expected_error_contains",
+        [
+            pytest.param(
+                ["Couldn't get size", "MODSIGN"],
+                True,
+                [],
+                id="all_errors_allowlisted",
+            ),
+            pytest.param(
+                ["Couldn't get size"],
+                False,
+                ["MODSIGN ERROR"],
+                id="partial_match",
+            ),
+        ],
+    )
+    def test_verify_messages_with_custom_allowlist(
+        self, dmesg, custom_allowlist, expected_successful, expected_error_contains
+    ):
+        output = dedent(
+            """
+            [    4.660616] Couldn't get size error: 0x800000000000000e
+            [    4.694322] MODSIGN ERROR: Couldn't get UEFI db list
+            [    4.728454] Couldn't get size ERROR: 0x800000000000000e"""
+        )
+        dmesg._connection.execute_command.return_value = ConnectionCompletedProcess(
+            return_code=0, args="command", stdout=output, stderr="stderr"
+        )
+        result = dmesg.verify_messages(custom_allowlist=custom_allowlist)
+        assert result["successful"] == expected_successful
+        if expected_successful:
+            assert result["error"] == ""
+        else:
+            for fragment in expected_error_contains:
+                assert fragment in result["error"]
 
     def test_check_errors(self, dmesg):
         output = dedent(

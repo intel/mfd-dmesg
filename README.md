@@ -24,7 +24,7 @@ print(dmesg_obj.get_os_package_info())
 `get_buffer_size_data(self, driver_name: str, driver_interface_number: str) -> Optional[list]` - responsible to return buffer size for respective drivername and interface number.
 `get_os_package_info(self) -> Union[OSPackageInfo, None]` - responsible to return os package installed which is retrived from dmesg output.
 `get_messages_additional(self, service_name: str = None, lines: int = 1000, expected_return_codes: Iterable = frozenset({0}), additional_greps: Optional[List[str]] = None) -> str` - responsible to return latest dmesg output based on addtional filters as specified by the user.
-`verify_messages(self) -> dict` - responsible to check if there are err level messages in dmesg output.
+`verify_messages(self, custom_allowlist: Optional[Iterable[str]] = None) -> dict` - responsible to check if there are err level messages in dmesg output. If `custom_allowlist` is provided, it extends the default `DMESG_WHITELIST` with additional benign error patterns to ignore.
 `clear_messages(self, errors_filter: Optional[List[str]] = [], ignore_filter: Optional[List[str]] = [],) -> Tuple[str, List[str]]` - responsible to clear the message buffer of the kernel (dmesg).
 `clear_messages_after_error(self, error_msg: str) -> Union[Tuple[str, List[str]], None]` - responsible to clear the message buffer of the kernel (dmesg) after user defined error occurred.
 `check_errors(self, error_list: list) -> tuple` - responsible to check for the errors as specified by the user list or user can select from predefined list declared in constant file.
